@@ -36,6 +36,7 @@ import retrofit.client.Response;
 public class TopTracksFragment extends Fragment implements AdapterView.OnItemClickListener {
     private ListView listView;
     private LocalBroadcastManager bm;
+    private BroadcastReceiver topTracksBroadcastReceiver;
 
     public View onCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.from(getActivity()).inflate(R.layout.fragment_top_tracks, container, false);
@@ -47,10 +48,18 @@ public class TopTracksFragment extends Fragment implements AdapterView.OnItemCli
         return view;
     }
 
+    public void onStop() {
+        super.onStop();
+        bm.unregisterReceiver(topTracksBroadcastReceiver);
+        Log.i("DATA", "Unregistering receiver #2");
+    }
+
     private void doReceiver() {
         IntentFilter filter = new IntentFilter("com.biryanistudio.spotifystreamer.TOP_TRACKS_FETCH_DONE");
         bm = LocalBroadcastManager.getInstance(getActivity());
-        bm.registerReceiver(new TopTracksBroadcastReceiver(), filter);
+        topTracksBroadcastReceiver = new TopTracksBroadcastReceiver();
+        bm.registerReceiver(topTracksBroadcastReceiver, filter);
+        Log.i("DATA", "Registering receiver #2");
     }
 
     private void doSpotify(String artistID) {
@@ -80,8 +89,12 @@ public class TopTracksFragment extends Fragment implements AdapterView.OnItemCli
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         DataHolder.mediaURL = DataHolder.topTracksList.get(position).preview_url;
         DataHolder.current = position;
-        getFragmentManager().beginTransaction().replace(R.id.container, new PlayerFragment())
-                .setTransition(android.R.anim.fade_in).addToBackStack(null).commit();
+        if(!DataHolder.twoPane)
+            getFragmentManager().beginTransaction().replace(R.id.onePane, new PlayerFragment())
+                    .setTransition(android.R.anim.fade_in).addToBackStack(null).commit();
+        else
+            getFragmentManager().beginTransaction().replace(R.id.twoPane, new PlayerFragment())
+                    .setTransition(android.R.anim.fade_in).addToBackStack(null).commit();
         Log.i("DATA", "Media URL - " + DataHolder.mediaURL);
     }
 

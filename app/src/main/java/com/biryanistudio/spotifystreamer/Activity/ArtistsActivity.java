@@ -19,8 +19,6 @@ import com.biryanistudio.spotifystreamer.Adapter.ArtistsCustomArrayAdapter;
 import com.biryanistudio.spotifystreamer.DataHolder;
 import com.biryanistudio.spotifystreamer.R;
 
-import java.util.List;
-
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
@@ -32,15 +30,20 @@ import retrofit.client.Response;
 
 public class ArtistsActivity extends ActionBarActivity implements AdapterView.OnItemClickListener {
     private ListView listView;
-    private List<Artist> artistsList;
     private LocalBroadcastManager bm;
+    private BroadcastReceiver artistsBroadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_artists);
+
         listView = (ListView) findViewById(R.id.listView);
         listView.setOnItemClickListener(this);
+        if(savedInstanceState != null) {
+            ArtistsCustomArrayAdapter<Artist> adapter = new ArtistsCustomArrayAdapter<>(this, R.layout.item_list, DataHolder.artistsList);
+            listView.setAdapter(adapter);
+        }
 
         final EditText editText = (EditText)findViewById(R.id.editText);
         Button button = (Button)findViewById(R.id.button);
@@ -54,10 +57,19 @@ public class ArtistsActivity extends ActionBarActivity implements AdapterView.On
         doReceiver();
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        bm.unregisterReceiver(artistsBroadcastReceiver);
+        Log.i("DATA", "Unregistering receiver #1");
+    }
+
     private void doReceiver() {
         IntentFilter filter = new IntentFilter("com.biryanistudio.spotifystreamer.ARTISTS_FETCH_DONE");
         bm = LocalBroadcastManager.getInstance(this);
-        bm.registerReceiver(new ArtistsBroadcastReceiver(), filter);
+        artistsBroadcastReceiver = new ArtistsBroadcastReceiver();
+        bm.registerReceiver(artistsBroadcastReceiver, filter);
+        Log.i("DATA", "Registering receiver #1");
     }
 
     private void doSpotify(String query) {
@@ -67,7 +79,7 @@ public class ArtistsActivity extends ActionBarActivity implements AdapterView.On
             @Override
             public void success(ArtistsPager artistsPager, Response response) {
                 if (response.getStatus() == 200) {
-                    artistsList = artistsPager.artists.items;
+                    DataHolder.artistsList = artistsPager.artists.items;
                     Intent i = new Intent("com.biryanistudio.spotifystreamer.ARTISTS_FETCH_DONE");
                     bm.sendBroadcast(i);
                     Log.i("DATA", "Sent broadcast");
@@ -82,7 +94,7 @@ public class ArtistsActivity extends ActionBarActivity implements AdapterView.On
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        DataHolder.artistID = artistsList.get(position).id;
+        DataHolder.artistID = DataHolder.artistsList.get(position).id;
         Intent i = new Intent(this, ContainerActivity.class);
         startActivity(i);
     }
@@ -91,8 +103,8 @@ public class ArtistsActivity extends ActionBarActivity implements AdapterView.On
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.i("DATA", "Received broadcast");
-            if(artistsList.size() != 0) {
-                ArtistsCustomArrayAdapter<Artist> adapter = new ArtistsCustomArrayAdapter<>(context, R.layout.item_list, artistsList);
+            if(DataHolder.artistsList.size() != 0) {
+                ArtistsCustomArrayAdapter<Artist> adapter = new ArtistsCustomArrayAdapter<>(context, R.layout.item_list, DataHolder.artistsList);
                 listView.setAdapter(adapter);
             }
             else

@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -20,14 +21,14 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 
 
-public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener {
+public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, View.OnClickListener {
     private MediaPlayer player;
     private ImageView albumArt;
     private SeekBar seekBar;
     private TextView trackLengthText;
-    private ImageView prev;
-    private ImageView playPause;
-    private ImageView next;
+    private ImageButton prev;
+    private ImageButton playPause;
+    private ImageButton next;
     private TextView trackInfoText;
 
     public View onCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -36,10 +37,13 @@ public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedLi
         albumArt = (ImageView)view.findViewById(R.id.imageView);
         seekBar = (SeekBar)view.findViewById(R.id.seekBar);
         trackLengthText = (TextView)view.findViewById(R.id.trackLengthText);
-        prev = (ImageView)view.findViewById(R.id.previous);
-        playPause = (ImageView)view.findViewById(R.id.play_pause);
-        next = (ImageView)view.findViewById(R.id.next);
+        prev = (ImageButton)view.findViewById(R.id.previous);
+        playPause = (ImageButton)view.findViewById(R.id.play_pause);
+        next = (ImageButton)view.findViewById(R.id.next);
         trackInfoText = (TextView)view.findViewById(R.id.trackInfoText);
+        prev.setOnClickListener(this);
+        playPause.setOnClickListener(this);
+        next.setOnClickListener(this);
 
         seekBar.setMax(30);
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -77,8 +81,8 @@ public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedLi
         }
     }
 
-    public void onStop() {
-        super.onStop();
+    public void onPause() {
+        super.onPause();
         player.stop();
         player.release();
         player = null;
@@ -121,7 +125,8 @@ public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedLi
         player.setOnCompletionListener(null);
     }
 
-    public void mediaControl(View v) {
+    @Override
+    public void onClick(View v) {
         int id = v.getId();
         if(id==R.id.play_pause) {
             if(player.isPlaying()) {
