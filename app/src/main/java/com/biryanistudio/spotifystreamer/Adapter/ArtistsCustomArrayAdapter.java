@@ -8,6 +8,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.biryanistudio.spotifystreamer.DataHolder;
 import com.biryanistudio.spotifystreamer.R;
 import com.squareup.picasso.Picasso;
 
@@ -20,13 +21,11 @@ import kaaes.spotify.webapi.android.models.Image;
  * Created by Sravan on 23-May-15.
  */
 public class ArtistsCustomArrayAdapter<E> extends ArrayAdapter {
-    private List<Artist> artists;
     private int resource;
     private Context context;
 
     public ArtistsCustomArrayAdapter(Context context, int resource, List objects) {
         super(context, resource, objects);
-        artists = objects;
         this.resource = resource;
         this.context = context;
     }
@@ -35,10 +34,10 @@ public class ArtistsCustomArrayAdapter<E> extends ArrayAdapter {
         if(convertView == null)
             convertView = LayoutInflater.from(parent.getContext()).inflate(resource, parent, false);
         TextView artistName = (TextView)convertView.findViewById(R.id.textView);
-        artistName.setText(artists.get(position).name);
+        artistName.setText(DataHolder.artistsList.get(position).name);
 
         ImageView artistImage = (ImageView)convertView.findViewById(R.id.imageView);
-        List<Image> images = artists.get(position).images;
+        List<Image> images = DataHolder.artistsList.get(position).images;
         if(images.size() > 0) {
             int tryImage = images.size() - 2;
             try {
@@ -53,6 +52,6 @@ public class ArtistsCustomArrayAdapter<E> extends ArrayAdapter {
     }
 
     public int getCount() {
-        return artists.size();
+        return DataHolder.artistsList.size();
     }
 }

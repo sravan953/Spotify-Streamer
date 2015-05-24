@@ -34,7 +34,7 @@ public class TopTracksCustomArrayAdapter<E> extends ArrayAdapter {
         if(convertView == null)
             convertView = LayoutInflater.from(parent.getContext()).inflate(resource, parent, false);
         TextView trackName = (TextView)convertView.findViewById(R.id.textView);
-        trackName.setText(DataHolder.topTracksList.get(position).name);
+        trackName.setText(DataHolder.topTracksList.get(position).name+" | "+DataHolder.topTracksList.get(position).album.name);
 
         ImageView artistImage = (ImageView)convertView.findViewById(R.id.imageView);
         List<Image> images = DataHolder.topTracksList.get(position).album.images;
