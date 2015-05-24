@@ -18,7 +18,6 @@ import com.biryanistudio.spotifystreamer.R;
 import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 
 
 public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, View.OnClickListener {
@@ -55,7 +54,6 @@ public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedLi
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-
             }
 
             @Override
@@ -83,9 +81,11 @@ public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedLi
 
     public void onPause() {
         super.onPause();
-        player.stop();
-        player.release();
-        player = null;
+        try {
+            player.stop();
+            player.release();
+            player = null;
+        } catch(Exception e) {}
     }
 
     @Override
@@ -98,14 +98,17 @@ public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedLi
         trackInfo += " by " + DataHolder.topTracksList.get(DataHolder.current).artists.get(0).name;
         trackInfoText.setText(trackInfo);
 
-        final SimpleDateFormat df = new SimpleDateFormat("mm:ss:SS");
         final Handler mHandler = new Handler();
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 if (player != null && player.isPlaying()) {
                     seekBar.setProgress(player.getCurrentPosition() / 1000);
-                    trackLengthText.setText(df.format(player.getCurrentPosition() / 1000) + " / 00:30");
+                    int seconds = player.getCurrentPosition() / 1000;
+                    if(seconds>=10)
+                        trackLengthText.setText("00:"+seconds + " / 00:30");
+                    else
+                        trackLengthText.setText("00:0"+seconds + " / 00:30");
                 } else if (player == null) {
                     seekBar.setProgress(0);
                     trackLengthText.setText("00:00 / 00:30");
@@ -121,7 +124,9 @@ public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedLi
     @Override
     public void onCompletion(MediaPlayer mp) {
         seekBar.setProgress(0);
+        trackLengthText.setText("00:00 / 00:30");
         playPause.setImageResource(R.drawable.ic_play_circle_outline_black_48dp);
+        player.seekTo(0);
         player.setOnCompletionListener(null);
     }
 
