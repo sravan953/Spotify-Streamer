@@ -4,7 +4,7 @@ import android.app.Fragment;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.os.Handler;
+import android.os.CountDownTimer;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,11 +13,13 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.biryanistudio.spotifystreamer.Activity.ContainerActivity;
 import com.biryanistudio.spotifystreamer.DataHolder;
 import com.biryanistudio.spotifystreamer.R;
 import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 
 public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, View.OnClickListener {
@@ -29,8 +31,11 @@ public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedLi
     private ImageButton playPause;
     private ImageButton next;
     private TextView trackInfoText;
+    private CountDownTimer timer;
 
     public View onCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        setRetainInstance(true);
+
         View view = inflater.from(getActivity()).inflate(R.layout.fragment_player, container, false);
 
         albumArt = (ImageView)view.findViewById(R.id.imageView);
@@ -48,8 +53,11 @@ public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedLi
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser)
+                if (fromUser) {
+                    timer.cancel();
+                    startTimer(30000 - (progress * 1000));
                     player.seekTo(progress * 1000);
+                }
             }
 
             @Override
@@ -61,7 +69,9 @@ public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedLi
 
             }
         });
-        doMediaPlayer(DataHolder.mediaURL);
+        if(!ContainerActivity.alreadyPlaying)
+            doMediaPlayer(DataHolder.mediaURL);
+        setDisplayInfo();
 
         return view;
     }
@@ -79,52 +89,52 @@ public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedLi
         }
     }
 
-    public void onPause() {
-        super.onPause();
-        try {
-            player.stop();
-            player.release();
-            player = null;
-        } catch(Exception e) {}
-    }
-
-    @Override
-    public void onPrepared(MediaPlayer p) {
-        playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_48dp);
+    private void setDisplayInfo() {
         String imageURL = DataHolder.topTracksList.get(DataHolder.current).album.images.get(0).url;
         Picasso.with(getActivity()).load(imageURL).placeholder(R.mipmap.ic_launcher).into(albumArt);
         String trackInfo = DataHolder.topTracksList.get(DataHolder.current).name;
         trackInfo += " | "+ DataHolder.topTracksList.get(DataHolder.current).album.name;
         trackInfo += " by " + DataHolder.topTracksList.get(DataHolder.current).artists.get(0).name;
         trackInfoText.setText(trackInfo);
+    }
 
-        final Handler mHandler = new Handler();
-        getActivity().runOnUiThread(new Runnable() {
+    private void startTimer(long millis) {
+        timer = new CountDownTimer(millis, 1000) {
             @Override
-            public void run() {
-                if (player != null && player.isPlaying()) {
-                    seekBar.setProgress(player.getCurrentPosition() / 1000);
-                    int seconds = player.getCurrentPosition() / 1000;
-                    if(seconds>=10)
-                        trackLengthText.setText("00:"+seconds + " / 00:30");
-                    else
-                        trackLengthText.setText("00:0"+seconds + " / 00:30");
-                } else if (player == null) {
-                    seekBar.setProgress(0);
-                    trackLengthText.setText("00:00 / 00:30");
-                }
-                mHandler.postDelayed(this, 1000);
+            public void onTick(long millisUntilFinished) {
+                int millis = (int)(30000-millisUntilFinished);
+                if(millisUntilFinished>20000)
+                    trackLengthText.setText("00:"+TimeUnit.MILLISECONDS.toSeconds(millis) + " / 00:30");
+                else
+                    trackLengthText.setText("0:"+TimeUnit.MILLISECONDS.toSeconds(millis) + " / 00:30");
+                seekBar.setProgress((int)TimeUnit.MILLISECONDS.toSeconds(millis));
             }
-        });
+
+            @Override
+            public void onFinish() {}
+        }.start();
+    }
+
+    private void clearPlayer() {
+        player.stop();
+        player.release();
+        player = null;
+    }
+
+    @Override
+    public void onPrepared(MediaPlayer p) {
+        playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_48dp);
+
+        startTimer(30000);
 
         player.start();
         player.setOnPreparedListener(null);
+        ContainerActivity.alreadyPlaying = true;
     }
 
     @Override
     public void onCompletion(MediaPlayer mp) {
         seekBar.setProgress(0);
-        trackLengthText.setText("00:00 / 00:30");
         playPause.setImageResource(R.drawable.ic_play_circle_outline_black_48dp);
         player.seekTo(0);
         player.setOnCompletionListener(null);
@@ -136,38 +146,48 @@ public class PlayerFragment extends Fragment implements MediaPlayer.OnPreparedLi
         if(id==R.id.play_pause) {
             if(player.isPlaying()) {
                 player.pause();
+                timer.cancel();
                 playPause.setImageResource(R.drawable.ic_play_circle_outline_black_48dp);
             }
             else {
                 player.start();
+                startTimer(30000 - (long)player.getCurrentPosition());
                 playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_48dp);
             }
         } else if(id==R.id.previous) {
             albumArt.setImageResource(R.mipmap.ic_launcher);
-            trackInfoText.setText("...");
+            trackInfoText.setText("... Loading ...");
+            timer.cancel();
             seekBar.setProgress(0);
             trackLengthText.setText("00:00 / 00:30");
 
-            player.stop();
-            player.release();
-            player = null;
+            clearPlayer();
+
             playPause.setImageResource(R.drawable.ic_play_circle_outline_grey600_48dp);
-            DataHolder.current--;
+            if(DataHolder.current != 0)
+                DataHolder.current--;
+            else
+                DataHolder.current = DataHolder.topTracksList.size()-1;
             DataHolder.mediaURL = DataHolder.topTracksList.get(DataHolder.current).preview_url;
             doMediaPlayer(DataHolder.mediaURL);
+            setDisplayInfo();
         } else {
             albumArt.setImageResource(R.mipmap.ic_launcher);
-            trackInfoText.setText("...");
+            trackInfoText.setText("... Loading ...");
+            timer.cancel();
             seekBar.setProgress(0);
             trackLengthText.setText("00:00 / 00:30");
 
-            player.stop();
-            player.release();
-            player = null;
+            clearPlayer();
+
             playPause.setImageResource(R.drawable.ic_play_circle_outline_grey600_48dp);
-            DataHolder.current++;
+            if(DataHolder.current < DataHolder.topTracksList.size())
+                DataHolder.current++;
+            else
+                DataHolder.current = 0;
             DataHolder.mediaURL = DataHolder.topTracksList.get(DataHolder.current).preview_url;
             doMediaPlayer(DataHolder.mediaURL);
+            setDisplayInfo();
         }
     }
 }

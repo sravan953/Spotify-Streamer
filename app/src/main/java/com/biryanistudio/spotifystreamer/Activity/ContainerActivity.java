@@ -12,6 +12,7 @@ import com.biryanistudio.spotifystreamer.R;
  * Created by Sravan on 23-May-15.
  */
 public class ContainerActivity extends ActionBarActivity {
+    static public boolean alreadyPlaying = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,7 +25,8 @@ public class ContainerActivity extends ActionBarActivity {
         else
             DataHolder.twoPane = true;
 
-        getFragmentManager().beginTransaction().replace(R.id.onePane, new TopTracksFragment()).commit();
+        if(savedInstanceState == null)
+            getFragmentManager().beginTransaction().replace(R.id.onePane, new TopTracksFragment()).commit();
     }
 
     @Override
