@@ -14,17 +14,16 @@ import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.Image;
 
 /**
  * Created by Sravan on 23-May-15.
  */
-public class ArtistsCustomArrayAdapter<E> extends ArrayAdapter {
+public class TopArtistsCustomArrayAdapter<E> extends ArrayAdapter {
     private int resource;
     private Context context;
 
-    public ArtistsCustomArrayAdapter(Context context, int resource, List objects) {
+    public TopArtistsCustomArrayAdapter(Context context, int resource, List objects) {
         super(context, resource, objects);
         this.resource = resource;
         this.context = context;

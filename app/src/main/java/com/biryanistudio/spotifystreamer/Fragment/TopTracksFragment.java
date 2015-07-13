@@ -13,10 +13,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.Toast;
 
+import com.biryanistudio.spotifystreamer.Activity.PlayerActivity;
 import com.biryanistudio.spotifystreamer.Adapter.TopTracksCustomArrayAdapter;
 import com.biryanistudio.spotifystreamer.DataHolder;
+import com.biryanistudio.spotifystreamer.PlayerService;
 import com.biryanistudio.spotifystreamer.R;
 
 import java.util.HashMap;
@@ -42,6 +43,11 @@ public class TopTracksFragment extends Fragment implements AdapterView.OnItemCli
         View view = inflater.from(getActivity()).inflate(R.layout.fragment_top_tracks, container, false);
         listView = (ListView)view.findViewById(R.id.listView);
         listView.setOnItemClickListener(this);
+
+        if(savedInstanceState != null) {
+            TopTracksCustomArrayAdapter<Artist> adapter = new TopTracksCustomArrayAdapter<>(getActivity(), R.layout.item_list, DataHolder.topTracksList);
+            listView.setAdapter(adapter);
+        }
 
         doReceiver();
         doSpotify(DataHolder.artistID);
@@ -89,25 +95,28 @@ public class TopTracksFragment extends Fragment implements AdapterView.OnItemCli
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         DataHolder.mediaURL = DataHolder.topTracksList.get(position).preview_url;
         DataHolder.current = position;
-        if(!DataHolder.twoPane)
-            getFragmentManager().beginTransaction().replace(R.id.onePane, new PlayerFragment())
-                    .setTransition(android.R.anim.fade_in).addToBackStack(null).commit();
-        else
-            getFragmentManager().beginTransaction().replace(R.id.twoPane, new PlayerFragment())
-                    .setTransition(android.R.anim.fade_in).addToBackStack(null).commit();
+
+        DataHolder.playerServiceIntent = new Intent(getActivity(), PlayerService.class);
+        getActivity().stopService(DataHolder.playerServiceIntent);
+        getActivity().startService(DataHolder.playerServiceIntent);
         Log.i("DATA", "Media URL - " + DataHolder.mediaURL);
+
+        if(!DataHolder.twoPane) {
+            Intent playerActivity = new Intent(getActivity(), PlayerActivity.class);
+            startActivity(playerActivity);
+        }
+        else {
+            PlayerDialogFragment dialogFragment = new PlayerDialogFragment();
+            dialogFragment.show(getFragmentManager(), "dialog");
+        }
     }
 
     private class TopTracksBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.i("DATA", "Received broadcast");
-            if(DataHolder.topTracksList.size() != 0) {
-                TopTracksCustomArrayAdapter<Artist> adapter = new TopTracksCustomArrayAdapter<>(context, R.layout.item_list, DataHolder.topTracksList);
-                listView.setAdapter(adapter);
-            }
-            else
-                Toast.makeText(context, "No artists found!", Toast.LENGTH_SHORT).show();
+            TopTracksCustomArrayAdapter<Artist> adapter = new TopTracksCustomArrayAdapter<>(context, R.layout.item_list, DataHolder.topTracksList);
+            listView.setAdapter(adapter);
         }
     }
 }

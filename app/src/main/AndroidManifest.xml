@@ -20,8 +20,11 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name=".PlayerService"/>
+
         <activity
-            android:name=".Activity.ContainerActivity"
+            android:name=".Activity.PlayerActivity"
             android:label="@string/app_name" />
 
     </application>
