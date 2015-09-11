@@ -13,6 +13,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.biryanistudio.spotifystreamer.Activity.PlayerActivity;
 import com.biryanistudio.spotifystreamer.Adapter.TopTracksCustomArrayAdapter;
@@ -35,12 +37,14 @@ import retrofit.client.Response;
  * Created by Sravan on 23-May-15.
  */
 public class TopTracksFragment extends Fragment implements AdapterView.OnItemClickListener {
+    private TextView textView;
     private ListView listView;
     private LocalBroadcastManager bm;
     private BroadcastReceiver topTracksBroadcastReceiver;
 
     public View onCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.from(getActivity()).inflate(R.layout.fragment_top_tracks, container, false);
+        textView = (TextView)view.findViewById(R.id.text);
         listView = (ListView)view.findViewById(R.id.listView);
         listView.setOnItemClickListener(this);
 
@@ -115,8 +119,13 @@ public class TopTracksFragment extends Fragment implements AdapterView.OnItemCli
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.i("DATA", "Received broadcast");
-            TopTracksCustomArrayAdapter<Artist> adapter = new TopTracksCustomArrayAdapter<>(context, R.layout.item_list, DataHolder.topTracksList);
-            listView.setAdapter(adapter);
+            if(DataHolder.topTracksList.size() == 0)
+                textView.setText("No results found!");
+            else {
+                textView.setText("");
+                TopTracksCustomArrayAdapter<Artist> adapter = new TopTracksCustomArrayAdapter<>(context, R.layout.item_list, DataHolder.topTracksList);
+                listView.setAdapter(adapter);
+            }
         }
     }
 }
